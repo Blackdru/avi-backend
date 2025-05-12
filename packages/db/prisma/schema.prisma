@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Version {
+  version String @id
+}
+
+model Visitors {
+  visitorId String @id
+}
+
+model User {
+  userId     String        @id @default(cuid())
+  username   String
+  otp        String
+  mobile     String        @unique
+  token      String        @default("")
+  suspended  Boolean       @default(false)
+  referralId String        @unique
+  verified   Boolean       @default(false)
+  referredBy String?
+  deviceId String?
+  bets       Bet[]
+  payments   Payments[]
+  wallet     Wallet?
+  withdrawls Withdrawals[]
+  referralStatus ReferralStatus
+}
+
+enum ReferralStatus {
+  None
+  Pending
+  Done
+}
+
+model Admin {
+  adminId   String    @id @default(cuid())
+  adminName String
+  email     String    @unique
+  password  String
+  role      AdminRole @default(admin)
+}
+
+model Banner {
+  bannerId    String @id @default(cuid())
+  imageUrl    String
+  redirectUrl String
+}
+
+model Wallet {
+  walletId  String   @id @default(cuid())
+  userId    String   @unique
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bonus     Float    @default(100)
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model Room {
+  roomId  String @id
+  maxRate Float
+  bets    Bet[]
+}
+
+model Bet {
+  betId        String  @id
+  roomId       String
+  userId       String
+  amount       Float
+  cashout      Boolean @default(false)
+  cashoutValue Float?
+  room         Room    @relation(fields: [roomId], references: [roomId])
+  user         User    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model Payments {
+  paymentId     String        @id @default(cuid())
+  amount        Float
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  userId        String
+  paymentStatus PaymentStatus @default(Pending)
+  currency      String        @default("INR")
+  user          User          @relation(fields: [userId], references: [userId])
+}
+
+model Ticket {
+  ticketId    String       @id @default(cuid())
+  issue       String
+  email       String
+  name        String
+  description String
+  status      TicketStatus @default(Open)
+  createdAt   DateTime     @default(now())
+  image       String?
+}
+
+model Withdrawals {
+  withdrawlId   String        @id @default(cuid())
+  amount        Float
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  paymentStatus PaymentStatus @default(Pending)
+  currency      String        @default("INR")
+  withdrawType  WithdrawType
+  userId        String
+  username      String
+  accountNumber String?
+  ifsc          String?
+  upi           String?
+  cryptoId      String?
+  user          User          @relation(fields: [userId], references: [userId])
+}
+
+model Feedback {
+  feedbackId String @id @default(cuid())
+  text       String
+}
+
+enum AdminRole {
+  admin
+  superadmin
+}
+
+enum WithdrawType {
+  Bank
+  UPI
+  Crypto
+}
+
+enum PaymentStatus {
+  Pending
+  Success
+  Failed
+}
+
+enum TicketStatus {
+  Open
+  Closed
+}
